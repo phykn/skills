@@ -206,6 +206,27 @@ Then the user requests details or makes a selection using:
 - **Everything**: "show all"
 - **Empty selection**: valid — user may look and decide to fix nothing. Terminate cleanly (see Step 6).
 
+### Recommendation (required)
+
+After the table, add a **Recommendation** block. The user has to decide something — do not hand them a raw list and go silent. State which findings you would take and why, so the user has a default to accept, modify, or reject.
+
+Format:
+
+```
+Recommendation: F-01, F-03
+  Take first: F-01 — high impact, high confidence, and F-03 is a cheap win that unblocks it.
+  Defer: F-02 — structural, larger blast radius; revisit after F-01 lands.
+  Skip: F-07 — low confidence, conflicts with F-01's direction.
+```
+
+Rules:
+- Recommend a concrete subset (possibly empty, possibly all) — never "it depends, you choose".
+- Ground the pick in the three axes and any conflicts. One short clause per finding is enough.
+- If you recommend empty ("nothing is worth doing right now"), say so explicitly and why.
+- The recommendation is a suggestion, not a decision. The user's selection still wins.
+
+Anywhere else in the flow where the user must choose (scope ambiguity in Step 1, conflicting findings, which experiments to run under the Step 4.5 budget), follow the same rule: state your pick and the one-line reason, then wait for the user.
+
 ## Failure Modes — STOP and Restart
 
 In-flight checklist. If any of these is true of a finding you just wrote, the reconstruction slipped — stop and redo.
