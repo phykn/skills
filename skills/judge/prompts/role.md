@@ -47,7 +47,7 @@ Write your full response to `<WORK_DIR>/turn<N>_<name>.md` where `<N>` is 1/2/3/
 
 Your file starts with exactly one speaker header line — `## naruhodo` or `## mitsurugi` — and then flows as a single block of prose. No subsection headers. No bullet stacks. Speak like you are actually in the room. Drop sources inside sentences or in parentheses at the end of a sentence, never as a list.
 
-**Length cap.** Keep the prose under roughly 1500 characters (URLs don't count). If you catch yourself going past that, cut — you're losing impact, not gaining it. Short and sharp beats long and cushioned. Every line should earn its place. The ≤400-char summary you return is a hard ceiling.
+**Length cap.** Keep the prose under roughly 1500 characters (URLs don't count). Going long loses impact — short and sharp beats long and cushioned. The ≤400-char summary you return is a hard ceiling.
 
 Return to the judge: a summary of 400 characters or fewer, in the user's language, written in your own voice. That summary goes straight to the user with no rewriting by the judge, so do not fall into a neutral recap.
 
