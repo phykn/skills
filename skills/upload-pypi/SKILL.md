@@ -24,7 +24,7 @@ In parallel:
 
 - `grep -rn "<old_version>" pyproject.toml README.md src/` — should be empty for version fields.
 - Confirm build tool: `uv --version` or `python -m build --version`. If neither, stop and ask.
-- Run tests if fast: `pytest -x`. If they fail, **stop**.
+- **Run the full test suite** (`pytest` or the project's command). Do not skip, xfail, or delete tests to force a green run. If the project has no tests at all, stop and get explicit user confirmation before continuing.
 
 Show old → new version and changed files. **Pause for user confirmation before Step 4** — PyPI uploads are not reversible.
 
@@ -54,6 +54,7 @@ New version, PyPI URL (`https://pypi.org/project/<package>/<version>/`), tag pus
 ## Safety rules
 
 - Never upload without explicit user go-ahead after Step 3.
+- Never upload with failing or skipped tests. No exceptions.
 - Never reuse a version number.
 - Never force-push a release tag.
 - Never `git add -A` during release.
