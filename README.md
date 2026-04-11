@@ -29,3 +29,6 @@ Requires a tentative position + uncertainty + a decision. Not for debugging, fac
 
 ### `/shut-up`
 Cuts redundancy, restatement, and defensive cruft from prose, code, and Claude's own responses. One rule: if removing it does not lose information the reader needs, remove it.
+
+### `/upload-pypi`
+Bumps the version in `pyproject.toml` (and any in-package version files), syncs README/changelog, verifies, then pauses for confirmation before tagging, pushing, and publishing to PyPI via `uv publish` or `twine`. Refuses to reuse versions, force-push tags, or guess credentials.
