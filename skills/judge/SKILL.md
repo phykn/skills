@@ -78,6 +78,8 @@ After Turn 2: if `mitsurugi` declared no real attacks, OR if admissibility rejec
 
 After Turn 3: if `naruhodo` collapsed on every attack (full concession on every point), render `reconsider` immediately and skip turn 4.
 
+**Active judgment.** You do not need to wait for the subagent to volunteer "no attacks" or "full collapse". If you read a turn file and honestly cannot find any attack with substance — bullets that don't actually land, attacks built entirely on rejected sources, surface-level objections without teeth — call it yourself and early-terminate, explaining the call in the verdict. Same for a rebuttal where every response is hand-waving. Do not let the structural requirement to "respond to every attack" force you to simulate a contest that isn't there. The turn structure is a scaffold, not a quota.
+
 After Turn 4: read all four turn files and render the verdict.
 
 **Exceptional user query (max 1, during turn 3 or turn 4 only)**: ask only if one piece of info (a) only the user can provide AND (b) would flip the verdict. Form:
@@ -89,6 +91,8 @@ After Turn 4: read all four turn files and render the verdict.
 ## Dispatch template
 
 Every turn dispatch follows this template. Never read `prompts/role.md` yourself or paste role content into prompts — pass the path and let the subagent jump to its section.
+
+**Model:** default to `haiku` for every subagent dispatch. Upgrade to `sonnet` only if (a) a prior dispatch on the same turn returned BLOCKED, or (b) Stage 0 intake flagged the topic as explicitly high-complexity — deep domain knowledge, multi-file coordination, subtle trade-offs that hinge on nuance. "Feels important" is not a reason to upgrade; cost and speed matter, and `role.md` is specific enough that `haiku` carries character.
 
 ```
 ROLE FILE: <skill dir>/prompts/role.md
@@ -132,8 +136,10 @@ This is read-only. Do not ask the user for feedback. Continue to the next turn a
 
 **Verdict values** (frontmatter, canonical English):
 - `keep` — position sound, attacks didn't land.
-- `keep-with-conditions` — valid under explicit conditions or modifications. Most common. Also the forced choice for stalemate cases.
+- `keep-with-conditions` — valid under explicit conditions or modifications. Also the forced choice for stalemate cases.
 - `reconsider` — decisive attack the defense couldn't cover; position as stated does not hold.
+
+**Downgrade rule:** before settling on `keep-with-conditions`, test whether the "conditions" are actual constraints (thresholds the user must check, scope limits, prerequisites, real trade-offs) or merely phrasing guides ("don't overstate it", "be clear which version you mean"). If they're phrasing guides, downgrade to `keep` and move the phrasing notes into the action items. `keep-with-conditions` is for real-world constraints that change what the user should do, not for wording advice.
 
 ### Two layers
 
