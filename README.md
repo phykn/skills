@@ -1,28 +1,28 @@
 # skills
 
-Custom skills for Claude Code.
+Custom skills for Claude Code — an opinionated set of workflows that extend Claude Code beyond its defaults. Each skill is a self-contained `SKILL.md` with YAML frontmatter that Claude Code auto-discovers and invokes by slash command or description match. They exist to turn points where I kept repeating the same ad-hoc prompting into fixed, reusable workflows.
 
 ## Installation
 
-To use these globally, copy the directories under `skills/` into `~/.claude/skills/`:
+Global:
 
 ```bash
 cp -r skills/push skills/refactor skills/judge ~/.claude/skills/
 ```
 
-For project-scoped use, place them under `.claude/skills/` in your project instead.
+Project-scoped: copy into `.claude/skills/` instead.
 
 ## Skills
 
 ### `/push`
-Stage all changes, auto-generate a commit message, and push to the remote. Matches the repo's existing commit style from recent logs and keeps the message short and "why"-focused (in English).
+Stages all changes, writes a short English commit message matching the repo's recent style, and pushes to the tracking remote. On failure, diagnoses instead of retrying.
 
 ### `/refactor`
-**Plans** a refactor — does not modify code. Uses Feynman-style reconstruction: for each unit, try to explain in plain language *why it should exist*. The points where that explanation fails are the findings. Results are written to a spec document and handed off to `writing-plans`.
+**Plans** a refactor — does not modify code. Uses Feynman-style reconstruction: for each unit, try to explain *why it should exist*. Where that explanation fails is the finding. Findings use six named fields and three independent axes (Impact / Confidence / Effort) — never a single priority score. After user selection, writes a spec and hands off to `writing-plans`.
 
-Not for specific bug fixes or hardware/library-level performance tuning.
+Not for specific bug fixes, profile-driven perf work, or hardware/library-level tuning.
 
 ### `/judge`
-Stress-tests a tentative design or implementation decision through adversarial review. Two one-sided subagents — `naruhodo` (defense, steelman) and `mitsurugi` (prosecutor, attack) — gather sourced evidence while the main Claude (`taco`) judges across up to 3 stages and renders a verdict: **유지 / 조건부 유지 / 재검토 필요**. The full record is saved to `docs/trials/`.
+Stress-tests a tentative decision through adversarial review. Two one-sided subagents — `naruhodo` (steelman) and `mitsurugi` (attack) — gather sourced, tiered evidence while `taco` (the main Claude) judges across up to 3 auto-terminating stages and renders **keep / keep-with-conditions / reconsider**. Full record saved to `docs/trials/`. User-facing output mirrors the user's language.
 
-Not for debugging, factual lookup, or zero-position brainstorming.
+Requires a tentative position + uncertainty + a decision. Not for debugging, factual lookup, or zero-position brainstorming.
