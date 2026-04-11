@@ -7,11 +7,9 @@ allowed-tools: Bash Read Grep Glob Write Edit Agent
 
 # Refactor (Diagnose and Plan)
 
-## Overview
+The main workspace is never modified — falsification experiments (Step 4.5) run in throwaway git worktrees. Execution hands off to `writing-plans` → `executing-plans`.
 
-This skill **plans** a refactor by diagnosing a codebase. It never modifies the main workspace — falsification experiments (Step 4.5) run in throwaway git worktrees. Execution of the refactor itself is delegated to `writing-plans` → `executing-plans`.
-
-The skill diagnoses code through **two independent lenses**. Neither subsumes the other; they catch different kinds of findings, and you must run both.
+Diagnosis runs through **two independent lenses**. Run both.
 
 **Lens ① — Feynman reconstruction (per-unit justification).**
 Question: *Why should this unit exist?*
@@ -72,7 +70,7 @@ Discrepancies between signals (docs vs code, tests vs code, commits vs code) are
 
 ### Step 3A: Sweep mode — MECE pass → Feynman pass
 
-The two lenses have different scope requirements: MECE needs a global view, Feynman is local. So the MECE lens runs in the main agent (which sees the whole tree) and the Feynman lens parallelizes across subagents.
+MECE needs a global view (main agent only); Feynman is local (parallelizes across subagents).
 
 **Pass 1 — MECE lens (main agent only):**
 - `Glob` the tree, inspect folder/file naming and module boundaries
@@ -90,7 +88,7 @@ The two lenses have different scope requirements: MECE needs a global view, Feyn
 
 ### Step 3B: Targeted mode — both lenses, main agent
 
-If the scope fits in the main agent's context, read the range directly and run both lenses yourself (MECE first, then Feynman). Do not spawn subagents — overhead is not worth it for small scopes, and running both lenses in one agent removes the global-view problem entirely.
+If the scope fits in the main agent's context, read the range directly and run both lenses yourself (MECE first, then Feynman). Do not spawn subagents — overhead is not worth it for small scopes.
 
 ### Step 4: Aggregate findings
 
@@ -100,7 +98,7 @@ If the scope fits in the main agent's context, read the range directly and run b
   - **Impact** (low / med / high) — how much code or behavior is affected
   - **Confidence** (low / med / high) — how sure you are this is a real problem
   - **Effort** (S / M / L) — rough cost to fix
-- **Do NOT compute a single priority score.** The user weights axes differently depending on their situation. Presenting one number erases the distinction.
+- **Do NOT compute a single priority score** — user weights axes differently; one number erases the distinction.
 - Detect **conflicts**: findings whose suggested directions are mutually exclusive. Mark them explicitly so the user knows to pick at most one.
 
 ### Step 4.5: Falsify findings with real experiments
@@ -132,7 +130,7 @@ For findings in these categories, **do not trust your own reconstruction — run
 
 **Budget:** At most 10 experiments per invocation. Rank falsifiable findings by `Impact × Confidence` and experiment on the top 10. Mark the rest `Verification: skipped (budget)`.
 
-**Per-experiment attempt cap: 3.** If a single experiment isn't producing a clean signal within 3 tries, stop and mark `Verification: inconclusive after 3 attempts`. Do not debug-rabbit-hole one experiment — move on. Goal is signal, not exhaustive verification.
+**Per-experiment attempt cap: 3.** If one experiment isn't producing a clean signal within 3 tries, stop and mark `Verification: inconclusive after 3 attempts`. Goal is signal, not exhaustive verification.
 
 **Coverage guardrail.** Before trusting a `dead-code` experiment, confirm the file is actually exercised by the test suite. A "dead code" finding on an uncovered file is meaningless — downgrade Confidence to low and mark `Verification: uncovered by tests`.
 
@@ -142,7 +140,7 @@ See "Presentation and Selection" below.
 
 ### Step 6: Write the spec document
 
-If the user selects nothing, terminate cleanly. Do NOT pressure them to pick something.
+If the user selects nothing, terminate cleanly.
 
 Otherwise, write to `docs/superpowers/specs/YYYY-MM-DD-refactor-<scope>-design.md` in the target project (create the directory if needed, NOT in `~/.claude/`) with these contents:
 

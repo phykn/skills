@@ -5,11 +5,11 @@ disable-model-invocation: false
 allowed-tools: Bash(git:*), Read, Grep
 ---
 
-Push the user's work to `main`. The flow branches on whether you're already on `main` or on a feature branch.
+Push the user's work to `main`.
 
 ## Step 1 — Understand current state
 
-Run these in parallel to see what you're working with:
+Run in parallel:
 
 - `git status`
 - `git diff` (shows unstaged)
@@ -58,7 +58,7 @@ Remember the current branch name — call it `$FEATURE`.
 
 6. **Delete `$FEATURE` locally.**
    - `git branch -d $FEATURE`
-   - This uses lowercase `-d`, which refuses if the branch is not fully merged. After a successful merge in step 4 it should always succeed. If it refuses, **stop** and report — do **not** escalate to `-D`.
+   - Lowercase `-d` refuses if the branch is not fully merged. If it refuses, **stop** and report — do **not** escalate to `-D`.
 
 7. **Delete `$FEATURE` on the remote if it exists there.**
    - Check: `git ls-remote --heads origin $FEATURE`

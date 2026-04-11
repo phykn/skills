@@ -1,13 +1,13 @@
 # skills
 
-Custom skills for Claude Code — an opinionated set of workflows that extend Claude Code beyond its defaults. Each skill is a self-contained `SKILL.md` with YAML frontmatter that Claude Code auto-discovers and invokes by slash command or description match. They exist to turn points where I kept repeating the same ad-hoc prompting into fixed, reusable workflows.
+Custom skills for Claude Code. Each one exists because I kept repeating the same ad-hoc prompting and wanted a fixed workflow instead.
 
 ## Installation
 
 Global:
 
 ```bash
-cp -r skills/push skills/refactor skills/judge ~/.claude/skills/
+cp -r skills/push skills/refactor skills/judge skills/shut-up ~/.claude/skills/
 ```
 
 Project-scoped: copy into `.claude/skills/` instead.
@@ -26,3 +26,6 @@ Not for specific bug fixes, profile-driven perf work, or hardware/library-level 
 Stress-tests a tentative decision through adversarial review. Two one-sided subagents — `naruhodo` (steelman) and `mitsurugi` (attack) — gather sourced, tiered evidence while `taco` (the main Claude) judges across up to 3 auto-terminating stages and renders **keep / keep-with-conditions / reconsider**. Full record saved to `docs/trials/`. User-facing output mirrors the user's language.
 
 Requires a tentative position + uncertainty + a decision. Not for debugging, factual lookup, or zero-position brainstorming.
+
+### `/shut-up`
+Cuts redundancy, restatement, and defensive cruft from prose, code, and Claude's own responses. One rule: if removing it does not lose information the reader needs, remove it.
