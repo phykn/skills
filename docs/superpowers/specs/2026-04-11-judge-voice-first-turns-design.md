@@ -23,6 +23,12 @@ status: draft
 3. **감사 추적을 단순화한다** — Tier 표 폐기, 출처 규칙 한 문단으로 축소, 매 턴 직후 즉시 검증.
 4. **모든 출력은 쉬운 말로** — 논문체 금지, 일상어 강제.
 
+## 구현 언어
+
+**`SKILL.md`와 `role.md`는 영어로 작성한다.** 전 세계 누구나 쓸 수 있어야 한다. 이 스펙에서 한국어로 예시를 보인 섹션 내용(Core principle, Plain language, Red flags, Turn instructions 등)은 구현 시 전부 영어로 번역한다. "Plain language only" 규칙의 예시도 영어로 교체 — 예: "structurally dominant" → "just bigger, so it wins", "tilts the expected value" → "the odds lean toward the tiger".
+
+**런타임 출력 언어는 사용자 언어를 미러링한다** (기존 동작 유지). 한국어 사용자가 judge를 돌리면 서브에이전트 응답도 한국어로 나온다. 파일은 영어, 실행은 다국어.
+
 ---
 
 ## Section 1 — `role.md` 재작성
