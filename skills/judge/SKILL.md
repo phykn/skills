@@ -111,7 +111,7 @@ After each turn returns, read the written turn file and verify every cited sourc
 
 - **URL** → `WebFetch` once. If it 404s, the domain fails, or the fetched content does not contain the cited claim → reject that claim and note the reason.
 - **`file:line`** → `Read` the file at that line. If the file does not exist or the line does not say what the turn claims → reject.
-- **Script (Tier-1-style empirical)** → `Read` the script and its captured output under `<record_dir>/evidence/`. If the claimed numbers cannot come from that script → reject as `fabricated-empirical`. This is the worst failure mode — catch it here or it poisons the verdict.
+- **Empirical script** → `Read` the script and its captured output under `<record_dir>/evidence/`. If the claimed numbers cannot come from that script → reject as `fabricated-empirical`. This is the worst failure mode — catch it here or it poisons the verdict.
 - **First-principles derivation** → assumptions must be explicit. A derivation smuggling in an empirical constant with no source → reject.
 - **No source at all** → automatic reject.
 
