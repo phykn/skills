@@ -7,7 +7,7 @@ Custom skills for Claude Code. Each one exists because I kept repeating the same
 Global:
 
 ```bash
-cp -r skills/push skills/refactor skills/judge skills/shut-up ~/.claude/skills/
+cp -r skills/* ~/.claude/skills/
 ```
 
 Project-scoped: copy into `.claude/skills/` instead.
