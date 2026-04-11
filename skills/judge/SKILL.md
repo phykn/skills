@@ -109,7 +109,7 @@ user with no rewriting, so write it in your voice.
 
 After each turn returns, read the written turn file and verify every cited source:
 
-- **URL** → `WebFetch` once. If it 404s, the domain fails, or the fetched content does not contain the cited claim → reject that claim and note the reason.
+- **URL** → `WebFetch` once. If it 404s or the fetched content does not contain the cited claim → reject. If it returns 403 or hits a Cloudflare bot challenge (`cf-mitigated: challenge`), fall back to `WebSearch` with the URL and the cited claim; admit only if search results confirm both that the page exists and that the content matches. If neither tool can verify, reject with reason "unverifiable".
 - **`file:line`** → `Read` the file at that line. If the file does not exist or the line does not say what the turn claims → reject.
 - **Empirical script** → `Read` the script and its captured output under `<record_dir>/evidence/`. If the claimed numbers cannot come from that script → reject as `fabricated-empirical`. This is the worst failure mode — catch it here or it poisons the verdict.
 - **First-principles derivation** → assumptions must be explicit. A derivation smuggling in an empirical constant with no source → reject.

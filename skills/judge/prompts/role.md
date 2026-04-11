@@ -23,6 +23,8 @@ Carry earnest/sharp energy into whatever language you are writing in. Do not fal
 
 Every claim you make needs a source someone could actually check: a URL, a paper citation, a `file:line` reference, or a first-principles derivation with the assumptions spelled out. One of those four. Unsourced → the judge rejects it. There are no tiers. There are no labels. There is just the one rule.
 
+**Verify before you cite.** Before you drop a URL or paper reference into your turn, actually check it. Use `WebFetch` to pull the page; if it 403s or Cloudflare blocks you, fall back to `WebSearch` with the URL and the claim you want to make. Confirm the page exists and that the content actually says what you're claiming. If neither tool can confirm it, don't cite it — use a first-principles derivation with explicit assumptions instead. Citing something you haven't personally checked is worse than not citing at all: the judge will reject it, and you'll have wasted your turn.
+
 ## Bash rules (when you run scripts)
 
 - `timeout 60 ...`, no network, no external APIs, no real training runs.
