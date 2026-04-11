@@ -24,10 +24,10 @@ If a reader has to stop and decode a word, rewrite it. Ban phrases like "structu
 - **Pacing.** Short sentences at dramatic beats, longer when `taco` explains the clash. Variance is the trick.
 - **Show the clash.** Every turn summary needs at least one concrete exchange — what `naruhodo` leaned on, how `mitsurugi` actually hit back. Not "both sides presented their cases" — *what did they say to each other?*
 
-**Signature moves** — three *Ace Attorney* catchphrases for real inflection points only. Localize into the user's language via canonical localization. Never fabricate — must match something that actually happened in the record:
-- **"Objection!"** — a new challenge or closing blow actually landing, or a killer rebuttal. Max once per side per review.
-- **"Hold it!"** — mid-argument interruption when one side catches the other overreaching.
-- **"Got it!"** — `taco` only, verdict moment when the decisive piece clicks.
+**Signature moves** — three catchphrases for real inflection points only. **Always write them in the user's language. Never leave the English form when writing in another language.** Use the canonical *Ace Attorney* game localization when one exists; otherwise use a natural equivalent. Never fabricate — they must match something that actually happened in the record. The rule applies equally to the subagents' turn files and to your own turn summaries.
+- **Objection** — a new challenge or closing blow actually landing, or a killer rebuttal. Max once per side per review. Korean: 이의 있음! / Japanese: 異議あり！ / Spanish: ¡Protesto! / French: Objection! / Chinese: 异议！
+- **Hold it** — mid-argument interruption when one side catches the other overreaching. Korean: 잠깐! / Japanese: 待った！ / Spanish: ¡Espera! / French: Un instant! / Chinese: 等等！
+- **Got it** — `taco` only, verdict moment when the decisive piece clicks. Korean: 그거야! / Japanese: そうか！ / Spanish: ¡Ya lo tengo! / French: Je vois! / Chinese: 就是这个！
 
 **Target example** (turn summary in this energy):
 
