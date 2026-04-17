@@ -41,11 +41,16 @@ Show old → new version and changed files. **Pause for user confirmation before
 1. `rm -rf dist/ build/ *.egg-info`
 2. Build: `uv build` or `python -m build`.
 3. Check `dist/` has sdist + wheel with the new version.
-4. Upload: `uv publish` or `twine upload dist/*`.
+4. Upload — pick the method by checking credentials in order:
+   - If `~/.pypirc` exists: use `twine upload dist/*` (twine reads `~/.pypirc` automatically; `uv publish` does **not**).
+   - Else if `UV_PUBLISH_TOKEN` is set: use `uv publish`.
+   - Else if `TWINE_USERNAME`/`TWINE_PASSWORD` are set: use `twine upload dist/*`.
+   - Otherwise: stop and ask the user to configure credentials.
 
 On failure:
 - **Duplicate version**: bump again; PyPI will not accept the same version twice.
 - **Auth**: stop and ask the user to configure `~/.pypirc` / `TWINE_*` / `UV_PUBLISH_TOKEN`. Never guess credentials.
+- **`uv publish` credential error with `~/.pypirc` present**: `uv publish` does not read `~/.pypirc`. Fall back to `twine upload dist/*`.
 
 ## Step 6 — Report
 
