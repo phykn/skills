@@ -127,7 +127,7 @@ Rejected claims are carried forward into the next dispatch's `PRIOR TURNS` list 
 
 After every turn — 1, 2, 3, 4 — emit to the user, in the user's language:
 
-1. **The subagent's returned ≤400-char summary, verbatim.** Do not rewrite it. Do not soften it. The subagent's voice going straight to the user is the entire point of this redesign.
+1. **The subagent's returned ≤400-char summary, verbatim.** Do not rewrite it. Do not soften it. The subagent's voice going straight to the user is the entire point.
 2. **`taco`'s own short paragraph** (2–4 sentences). What just happened, which way the wind blew, where the next turn is heading. Stay in `taco`'s register — the adult in the room, amused by both, cutting through theatrics to name what actually moved. No bullet lists here.
 
 Continue to the next turn automatically unless an early-termination condition fired.
