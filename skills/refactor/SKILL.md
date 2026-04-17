@@ -1,238 +1,142 @@
 ---
 name: refactor
-description: Use when the user asks to refactor, clean up, reorganize, or improve code without a specific bug in mind. Plans and scopes a refactor via Feynman-style reconstruction — does not execute the refactor itself; hands off to writing-plans.
+description: Use when the user asks to refactor, clean up, reorganize, or improve code without a specific bug in mind.
 disable-model-invocation: false
 allowed-tools: Bash Read Grep Glob Write Edit Agent
 ---
 
-# Refactor (Diagnose and Plan)
+# Refactor
 
-The main workspace is never modified — falsification experiments (Step 4.5) run in throwaway git worktrees. Execution hands off to `writing-plans` → `executing-plans`.
+"Fix my code." Ask ≤2 upfront questions (scope, test command — only if undetectable). Then diagnose, auto-triage, apply, test, commit. No further questions. Flags: `dry-run` (stop after triage), `allow-red-baseline`, `include-behavior-change`.
 
-Diagnosis runs through **two independent lenses**. Run both.
+## Axes
 
-**Lens ① — Feynman reconstruction (per-unit justification).**
-Question: *Why should this unit exist?*
-Catches: units with no reason (`dead-code`), unjustified complexity, `logic` that fails to enforce its claimed invariant, work with no purpose (`perf-waste`).
+| Axis | Values | Meaning |
+|---|---|---|
+| Category | `delete` \| `extract` \| `inline` \| `move` \| `rename` \| `replace` \| `correct` \| `add` | Operation |
+| Lens | Unit \| Partition | Per-unit vs cross-unit |
+| Stage | 1 \| 2 | Filesystem-path change = 1, else 2 |
 
-**Lens ② — MECE partition (cross-unit structure).**
-Question: *Do these units divide the problem space without overlap or gap?*
-Applies at every granularity: folders, files, functions.
-Catches: unclear module boundaries (`structure`), names that do not reflect the partition (`naming`), the same concern in two cells (`duplication` = overlap), a concern with no cell (`gap`).
+`delete`/`extract`/`inline`/`move`/`rename`/`replace` preserve behavior. `correct` (invariant fix) and `add` (missing abstraction) change behavior — both require a new test proving the invariant before the fix.
 
-Both lenses share one rule: **do not fetch intent from docs, tests, or comments. Reconstruct it.** The points where reconstruction fails are the findings.
+Same smell → different operations: duplication → `delete` (drop one copy) or `extract` (pull the common piece). The choice is the finding.
 
-**Self-check (apply to every reconstruction in either lens):**
+## Lenses
 
-> "Is this a plain-English translation of what the code does, or an explanation of why it should exist / why this partition? If the former, the reconstruction has failed — and the failure is itself the finding."
+- **Unit** — hold one unit in working memory, reconstruct *why it should exist*. Parallelizable.
+- **Partition** — hold sibling units in working memory, check they tile the space *without overlap or gap*. Main agent only.
 
-The most common slip is treating code as self-justifying ("this function sorts the list, therefore it exists to sort the list"). If your explanation would still hold for a pointless function, you have paraphrased, not reconstructed.
+Reconstruct intent from code alone — **do not read docs, tests, or comments for intent**. Reconstruction failures are the findings.
 
-### Worked example (Feynman lens)
+**Self-check:** If your explanation still holds for a pointless function or partition, you paraphrased. The paraphrase is the finding.
 
-Function `normalize_email(s)` lowercases and strips whitespace.
+## Worked example
 
-- **Paraphrase (failed reconstruction):** "This function exists to normalize email strings by lowercasing and stripping whitespace." *Why it fails:* a restatement of the body. It would hold for any normalization function.
+`src/ml/data/{augment,preprocess}/`.
 
-- **Real reconstruction:** "Downstream code compares emails for account-uniqueness via byte equality. Without this call, `Alice@x.com` and `alice@x.com` would create two accounts for the same person. The invariant: after this function returns, two inputs that should be the same user are byte-equal. Delete this → duplicate-account bug returns at the signup path." *Why it works:* names the concrete invariant, explains what breaks if removed, ties to a specific downstream caller.
-
-## When to Use
-
-- User asks to refactor, clean up, reorganize, or improve a codebase or module
-- User asks for a structural/quality code review (not a specific bug)
-- User says "this feels messy", "this needs cleanup", "let us plan a refactor"
+- *Paraphrase:* "`augment/` augments, `preprocess/` preprocesses" — restates names, fails.
+- *Reconstruction:* "`preprocess/` = deterministic one-shot transforms; `augment/` = stochastic runtime perturbations." Check: `preprocess/normalize.py` has random jitter; `augment/crop.py` is deterministic → split is by name, not responsibility → `move` (Partition, Stage 1).
 
 ## When NOT to Use
 
-- **Specific bug fixing** — use `systematic-debugging`
-- **Profile-driven performance optimization** — benchmark/profiler work is a different workflow
-- **Hardware- or library-specific optimization** (SIMD, CUDA tuning, cache alignment)
-- **New features** — use `brainstorming`
+- Specific bug fixing.
+- Profile-driven performance optimization.
+- Hardware/library-specific optimization (SIMD, CUDA, cache alignment).
+- New features.
 
-**Performance scope boundary**: "this code does unnecessary work" or "this algorithm is needlessly expensive for its purpose" IS in scope — those fall out of Feynman reconstruction naturally. "This hot path is slow under load" is out of scope — it needs measurement.
+Exception: "unnecessary work" surfaces as `delete`/`replace` during Unit reconstruction — in scope.
 
 ## Process
 
-### Step 1: Determine scope
+### 1. Setup
 
-Infer from the invocation whether this is a **sweep** (full codebase) or a **targeted** refactor. If the user wrote `/refactor src/ml/training`, that is targeted — do not ask again. Ask ONLY when genuinely ambiguous.
+Infer scope (`/refactor src/ml/training` = targeted; no path = sweep). Pick tier, state in one line:
 
-### Step 2: Gather context signals
+| Tier | Trigger | Lenses | Subagents | Experiments |
+|---|---|---|---|---|
+| `light` | ≤3 files or <500 LOC | Unit only | no | 2 |
+| `standard` | 4–15 files, or sweep <50 files | both | no | 3 |
+| `deep` | sweep ≥50 files, or user says "deep" | both | parallel | 10 |
 
-Read each of these as *signals*, not ground truth:
-- `CLAUDE.md`, `README.md`, `docs/`
-- Recent `git log` (progression + churn data for triage)
-- Test file locations and a rough coverage signal
+Default: lowest tier scope allows.
 
-**Do NOT ask the user for intent at this stage.** Asking up-front invites post-hoc rationalization, which corrupts the reconstruction signal. You ask the user later, and only when a specific reconstruction conflict surfaces.
+Read `CLAUDE.md`, `README.md`, `docs/`, `git log`, test locations as *signals* — not intent. Discrepancies are findings.
 
-Discrepancies between signals (docs vs code, tests vs code, commits vs code) are themselves findings.
+Detect the test command (`package.json`, `pyproject.toml`, `Cargo.toml`, `Makefile`, `pytest.ini`). **Run baseline — must be green.** Else abort with first-failure summary; user re-invokes with `allow-red-baseline`.
 
-### Step 3A: Sweep mode — MECE pass → Feynman pass
+Ask scope only if neither path nor sweep intent is inferable. Ask test command only if none detectable. Bundle in one message. After this, ask nothing more.
 
-MECE needs a global view (main agent only); Feynman is local (parallelizes across subagents).
+### 2. Diagnose + verify
 
-**Pass 1 — MECE lens (main agent only):**
-- `Glob` the tree, inspect folder/file naming and module boundaries
-- Produce MECE findings directly, not just triage signals. Categories: `structure | naming | duplication | gap`
-- Produce the Feynman-pass target list using the filters below, **plus** any files the MECE pass flagged as sitting in a suspicious boundary region:
-  - **Size** (lines of code)
-  - **Complexity** (nesting depth, branch count, file length)
-  - **Git churn** (files changed frequently recently — unstable = risk)
-  - **Random sampling** — also pick a few apparently-clean files. Clean names can hide rotten internals; cosmetic triage alone misses these.
+Partition lens first (global, main agent). Then Unit:
+- `deep`: dispatch Unit targets to parallel subagents.
+- `standard`: Unit sequentially in main agent.
+- Targeted: both in main agent.
 
-**Pass 2 — Feynman lens (parallel subagents):**
-- Dispatch the selected targets to subagents in parallel (use `dispatching-parallel-agents`)
-- Each subagent receives the dispatch template below and performs Feynman reconstruction on its slice
-- Each returns a findings report containing only Feynman-lens categories (`dead-code | logic | complexity | perf-waste`). Subagents do NOT produce MECE findings — they lack the global view.
+Unit target selection: file size, nesting depth, git churn, plus random sampling (clean names hide rotten internals).
 
-### Step 3B: Targeted mode — both lenses, main agent
+Each finding = exactly one operation. Track internally: location, lens, category, stage, one-line observation, one-line reconstruction-failure-point, direction, Impact/Confidence/Effort, verification, and (for `correct`/`add`) pre-commit test name.
 
-If the scope fits in the main agent's context, read the range directly and run both lenses yourself (MECE first, then Feynman). Do not spawn subagents — overhead is not worth it for small scopes.
-
-### Step 4: Aggregate findings
-
-- Merge subagent reports (sweep mode)
-- Deduplicate overlapping findings
-- Assign three independent axes to each finding:
-  - **Impact** (low / med / high) — how much code or behavior is affected
-  - **Confidence** (low / med / high) — how sure you are this is a real problem
-  - **Effort** (S / M / L) — rough cost to fix
-- **Do NOT compute a single priority score** — user weights axes differently; one number erases the distinction.
-- Detect **conflicts**: findings whose suggested directions are mutually exclusive. Mark them explicitly so the user knows to pick at most one.
-
-### Step 4.5: Falsify findings with real experiments
-
-For findings in these categories, **do not trust your own reconstruction — run an experiment**:
+Confirm falsifiable operations in a throwaway worktree:
 
 | Category | Experiment |
 |---|---|
-| `dead-code` | Delete the code, run the relevant tests. Pass → dead confirmed. |
-| `duplication` | Replace one implementation with a call to the other, run tests. Pass → duplication confirmed. |
-| `unused-return` | Change the function to return `None` (or equivalent), run tests. Pass → return value unused. |
-| `logic` (when reconstruction claims "this enforces X") | Write a test that violates X. Fail → claim confirmed. Pass → reconstruction is wrong; this itself becomes a new finding. |
-| `perf-waste` (algorithmic) | Benchmark with n=10, 100, 1000 to confirm the complexity claim. |
+| `delete` | Delete, run tests. Pass → safe. Require test coverage — else downgrade Confidence. |
+| `extract` (duplication) | Replace one copy with a call to the other. Pass → equivalent. |
+| `inline` | Replace callers with body. Pass → no dependency on separation. |
+| `correct` | Write a test violating the claimed invariant. Fail → real; Pass → drop the finding. |
+| `replace` (perf claim) | Benchmark at n=10/100/1000. |
 
-**How to run experiments safely:**
+Skip experiments for `move`/`rename`/`add` and `replace` without perf claim.
 
-1. Create an isolated git worktree (use `using-git-worktrees`) so the main workspace is never touched.
-2. Make the modification in the worktree.
-3. Run only the relevant tests (`pytest path/to/test_x.py`, not the full suite), detected from Step 2's context scan.
-4. Record the command and output.
-5. Discard the worktree.
+Budget per tier (see table). Rank by `Impact × Confidence`, top N. Cap 3 attempts per experiment. Discard worktree after each.
 
-**Update the finding based on the result:**
-- Confirms → Confidence: high, attach `Verification` field with command + output
-- Contradicts → drop the finding, or rewrite it as a new finding ("I thought X but the test shows Y")
-- Not expressible as an experiment → keep reconstruction's Confidence, mark `Verification: not falsifiable by execution`
+### 3. Triage + apply
 
-**Skip Step 4.5 entirely for** `structure | naming | complexity | gap` — these cannot be falsified by execution. (Experiments are a main-agent step; subagents never run them, per Step 3A.)
+Three buckets (automatic):
 
-**Budget:** At most 10 experiments per invocation. Rank falsifiable findings by `Impact × Confidence` and experiment on the top 10. Mark the rest `Verification: skipped (budget)`.
+- **Include**: behavior-preserving findings above threshold.
+- **Report**: `correct`/`add` — behavior change, listed not applied. `include-behavior-change` flag moves these to Include; each gets its invariant test applied first, fix commits only if that test goes red → green.
+- **Skip** (silent): Impact low AND Confidence low, OR `Verification: contradicted`, OR uncovered by tests.
 
-**Per-experiment attempt cap: 3.** If one experiment isn't producing a clean signal within 3 tries, stop and mark `Verification: inconclusive after 3 attempts`. Goal is signal, not exhaustive verification.
+Conflicts: keep higher `Impact × Confidence`. Tie: keep Stage 1.
 
-**Coverage guardrail.** Before trusting a `dead-code` experiment, confirm the file is actually exercised by the test suite. A "dead code" finding on an uncovered file is meaningless — downgrade Confidence to low and mark `Verification: uncovered by tests`.
-
-### Step 5: Present findings → user selection
-
-See "Presentation and Selection" below.
-
-### Step 6: Write the spec document
-
-If the user selects nothing, terminate cleanly.
-
-Otherwise, write to `docs/superpowers/specs/YYYY-MM-DD-refactor-<scope>-design.md` in the target project (create the directory if needed, NOT in `~/.claude/`) with these contents:
-
-1. **Scope** — what was diagnosed
-2. **Context summary** — what sources were read
-3. **Full body of each selected finding**
-4. **Refactoring constraints** — tests must still pass, public API stable, etc.
-5. **Success criteria** — "after the refactor, the same Feynman reconstruction should no longer get stuck at the failure point"
-
-Commit with a message like `docs: refactor diagnosis for <scope>`, then invoke `writing-plans` with the spec as input.
-
-### Subagent dispatch template (for Feynman pass)
-
-When dispatching a subagent, paste this prompt with the bracketed parts substituted, and **append the Finding Format block (from the next section) verbatim** at the marked spot:
-
-> You run the **Feynman lens only** on `[region path]`. MECE analysis (structure, boundaries, overlap, gap) requires a global view and is done by the main agent — do NOT write findings about module boundaries or files outside your scope.
->
-> For each significant unit (file, class, function), explain in plain language **why this unit should exist** — not what it does, why it has to exist. Apply the self-check from the skill Overview to every reconstruction.
->
-> Context signals (read as signals, not truth): `[paths to docs/README/tests]`
->
-> Record each finding using the Finding Format below. Observation and Reconstruction MUST be separate fields — blending them destroys auditability. Do NOT propose implementation plans. Do NOT run experiments or modify code — the main agent handles falsification in a later step. Use the three axes (Impact, Confidence, Effort); do not group findings by single priority.
->
-> Valid Category values for your output: `dead-code | logic | complexity | perf-waste`.
->
-> [APPEND FINDING FORMAT BLOCK HERE]
->
-> Return a markdown report with all findings.
-
-## Finding Format
-
-Each finding has this exact structure:
-
-```markdown
-### F-{id}: {one-line summary}
-- **Location**: `path/to/file.py:42` (or directory for structural findings)
-- **Category**: one of the two lens groups:
-  - Feynman lens: `dead-code | logic | complexity | perf-waste`
-  - MECE lens: `structure | naming | duplication | gap`
-- **Observation**: What is visible in the code. Facts only, NO interpretation. Example: "This function is called from three places, all of which discard its return value."
-- **Reconstruction attempt**: "This unit exists to do X, because Y..." — a plain-language why-it-should-exist.
-- **Failure point**: Where and why the reconstruction broke down. THIS is the reason it is a finding.
-- **Suggested direction**: One or two sentences of direction. NOT an implementation. Detailed planning is deferred to `writing-plans`.
-- **Axes**: Impact: low|med|high, Confidence: low|med|high, Effort: S|M|L
-- **Verification** *(optional)*: Experiment command + observed result (see Step 4.5). Or `not falsifiable by execution`.
-- **Conflicts** *(optional)*: `F-05 proposes the opposite direction — mutually exclusive`
-```
-
-## Presentation and Selection
-
-First, show a summary table for scanning:
+Headline (user-facing — use plain words, not internal bucket names):
 
 ```
-ID    | Location                          | Category  | Imp  | Conf | Eff | Summary
-F-01  | src/ml/training/trainer.py        | logic     | high | high | M   | loss schedule diverges from config
-F-02  | src/ml/data/                      | structure | med  | high | S   | augment/ and preprocess/ boundary unclear
-F-03  | src/ml/model/lora/wrapper.py:88   | dead-code | low  | high | S   | unused fallback branch
+Scope: <x>. Tier: <t>.
+Fixing now: <N> (<s1> file moves, <s2> code edits). Flagged (would change behavior, not touching): <B>. Ignored (low confidence or not covered by tests): <M>.
+Starting.
 ```
 
-Then the user requests details or makes a selection using:
-- **ID list**: "show F-01, F-03" / "F-01, F-03, F-07"
-- **Filter**: "all high-impact", "all S-effort", "all logic"
-- **Everything**: "show all"
-- **Empty selection**: valid — user may look and decide to fix nothing. Terminate cleanly (see Step 6).
+Include and Report both empty → "Nothing worth fixing.", terminate. `dry-run` → stop here.
 
-### Recommendation (required)
+**Stage 1** (filesystem moves/renames): batch atomically. Full suite. Green → commit. Red → revert batch, mark `reverted`, stop.
 
-After the table, add a **Recommendation** block. The user has to decide something — do not hand them a raw list and go silent. State which findings you would take and why, so the user has a default to accept, modify, or reject.
+**Stage 2**, per finding in decreasing Impact order (Include only):
 
-Format:
+1. Apply.
+2. Test touched region. Green → commit (`refactor(<scope>): <summary> (F-xx)`).
+3. Red → one retry: revert, reshape, re-run. Green → commit; Red → revert, mark `reverted (2 attempts)`, continue.
+
+**Final full suite.** Green → finish. Red → flag the cross-cutting regression with the failing test name. Do NOT auto-revert; user decides.
+
+**Final report (user-facing — use plain words):**
 
 ```
-Recommendation: F-01, F-03
-  Take first: F-01 — high impact, high confidence, and F-03 is a cheap win that unblocks it.
-  Defer: F-02 — structural, larger blast radius; revisit after F-01 lands.
-  Skip: F-07 — low confidence, conflicts with F-01's direction.
+Fixed: <K> of <N>, in <C> commits. Had to undo: <R> (<ids>) — tests broke after the change.
+Tests: were green before → <still green ✓ | now red at <first-failure>. A regression slipped past per-file tests — inspect or revert via git.>
+Flagged but NOT fixed: <B> (<ids>) — these would change behavior, so left alone. Rerun with `include-behavior-change` to apply.
+Skipped as low priority: <M>.
 ```
 
-Rules:
-- Recommend a concrete subset (possibly empty, possibly all) — never "it depends, you choose".
-- Ground the pick in the three axes and any conflicts. One short clause per finding is enough.
-- If you recommend empty ("nothing is worth doing right now"), say so explicitly and why.
-- The recommendation is a suggestion, not a decision. The user's selection still wins.
+Omit the "Flagged" line when B = 0. Omit the "Had to undo" clause when R = 0.
 
-Anywhere else in the flow where the user must choose (scope ambiguity in Step 1, conflicting findings, which experiments to run under the Step 4.5 budget), follow the same rule: state your pick and the one-line reason, then wait for the user.
+## Failure Modes
 
-## Failure Modes — STOP and Restart
-
-In-flight checklist. If any of these is true of a finding you just wrote, the reconstruction slipped — stop and redo.
-
-| Symptom | Why it is wrong |
-|---------|-----------------|
-| "Observation" and "Reconstruction" contain the same information | They must be separable: one is fact, one is interpretation. Blended, neither you nor the user can audit the reasoning. |
-| A finding written as a prose paragraph instead of the named fields | Prose blends observation and interpretation. The named fields exist to force them apart. |
-| After a sweep, zero `structure`, `duplication`, or `gap` findings | The MECE lens was skipped. A real sweep-scoped codebase almost always has at least one boundary issue — zero MECE findings usually means the main agent only ran Feynman. |
+| Symptom | Fix |
+|---|---|
+| Observation and Reconstruction say the same thing | Split: fact vs interpretation. |
+| Category recorded as a smell name (`dead-code`, `duplication`, `logic`, `gap`, `structure`, `naming`, `complexity`, `perf-waste`) | Reclassify: `dead-code`→`delete`; `duplication`→`delete`/`extract`; `logic`→`correct`; `gap`→`add`; `structure`→`move`; `naming`→`rename`; `complexity`→`extract`/`replace`; `perf-waste`→`delete`/`replace`. |
+| After a sweep, zero Partition findings | Partition was skipped. Re-run. |
+| After 10+ units scanned, zero Unit findings | Unit applied cosmetically. Re-apply self-check. |
