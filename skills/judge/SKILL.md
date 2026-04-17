@@ -51,7 +51,7 @@ This skill requires all three of: *tentative position*, *uncertainty*, *a decisi
 
 All working files live under a single `record_dir` inside the user's project. No `/tmp`, no global scratch.
 
-### Stage 0 — Intake
+### Intake
 
 1. Ask: **"Please describe the decision you're trying to make."**
 2. Check abort conditions.
