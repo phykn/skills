@@ -50,7 +50,7 @@ Read `CLAUDE.md`, `README.md`, `docs/`, `git log`, test locations as *signals*, 
 
 Detect the test command (`package.json`, `pyproject.toml`, `Cargo.toml`, `Makefile`, `pytest.ini`). **Run baseline — must be green.** Else abort; user re-invokes with `allow-red-baseline`.
 
-Ask scope only if no path/sweep inferable; ask test command only if no runner detectable. Bundle in one message. After this, ask nothing more.
+Ask scope only if no path/sweep inferable; ask test command only if no runner detectable. Bundle in one message.
 
 ### 2. Diagnose + verify
 
