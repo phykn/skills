@@ -10,9 +10,9 @@ Global:
 cp -r skills/* ~/.claude/skills/
 ```
 
-Project-scoped: copy into `.claude/skills/` instead.
+Project-scoped: copy into `.claude/skills/` at the project root instead.
 
 ## Skills
 
 ### `/upload-pypi`
-Bumps the version in `pyproject.toml` (and any in-package version files), syncs README/changelog, verifies, then pauses for confirmation before tagging, pushing, and publishing to PyPI via `uv publish` or `twine`. Refuses to reuse versions, force-push tags, or guess credentials.
+Bumps the version in `pyproject.toml` (and any in-package version files), updates README references and the changelog when present, verifies, then pauses for confirmation before tagging, pushing, and publishing to PyPI via `uv publish` or `twine`. Will not reuse a version number, force-push a release tag, `git add -A`, or guess credentials.
